@@ -110,24 +110,29 @@ public class Factor implements Comparable {
 
     //utiliser juste apres setTable
     public Map<Map<String, String>, Double> reduceEvidence(Variable evidence, String out) {
+        Map<Map<String, String>, Double> newTable = new LinkedHashMap<>();//nouvelle table
 
-        Iterator<Map<String, String>> iterator = _factor.keySet().iterator();
+        Iterator<Map<String, String>> iterator = _factor.keySet().iterator();//iteration sur la table actuel
 
         while (iterator.hasNext()) {
             Map<String, String> key = iterator.next();
-            String varValue = key.get(evidence.getName());
+            String varOut = key.get(evidence.getName());//get le outcome de la ligne actuel de la table actuel
 
-            if (!varValue.equals(out)) {
-                iterator.remove(); //  si la valeur est différente, on enlève toute la ligne
-            } else {
-                //  Sinon, il faut juste enlever la variable de la clé
-                key.remove(evidence.getName());
+            if (varOut.equals(out)) {//si dan la ligne se trouve evidence avec le outcome rechercher on cree une nouvelle cle avec les meme valeur sans l'evidence
+                Map<String, String> newKey = new LinkedHashMap<>();
+                for(String var : key.keySet()){
+                    if(!var.equals(evidence.getName())){
+                        newKey.put(var,key.get(var));
+                    }
+                }
+                newTable.put(newKey,_factor.get(key));
+
             }
         }
 
         _variables.remove(evidence);
 
-        return _factor;
+        return newTable;
 
 
     }
@@ -168,16 +173,7 @@ public class Factor implements Comparable {
         return result;
     }
 
-//    //מפלטר
-//    public static Map<Map<String, String>,Double> filterMap(Map<String, String> combination, List<Variable> keys) {
-//
-//        Map<Map<String, String>,Double> result = new LinkedHashMap<>();
-//        for (Variable var : variables) {
-//            result.put(var.getName(), combination.get(var.getName()));
-//        }
-//
-//        return result;
-//    }
+
 
     @Override
     public String toString() {

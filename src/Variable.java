@@ -77,6 +77,19 @@ public class Variable {
         return sb.toString();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Variable other = (Variable) obj;
+        return _name.equals(other._name);
+    }
+
+    @Override
+    public int hashCode() {
+        return _name.hashCode();
+    }
+
 
 
 

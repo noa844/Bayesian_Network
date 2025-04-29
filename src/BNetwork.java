@@ -3,7 +3,7 @@ import java.util.*;
 public class BNetwork {
     private int multiplicationCount = 0;
     private int additionCount = 0;
-    private  final Map<String, Variable> _variables = new LinkedHashMap<>();
+    private final Map<String, Variable> _variables = new LinkedHashMap<>();
     private final List<Factor> _factors = new ArrayList<>();
 
 
@@ -11,12 +11,14 @@ public class BNetwork {
         _variables.put(v.getName(), v);
     }
 
-    public  Variable getVariable(String name) {
+    public Variable getVariable(String name) {
         return _variables.get(name);
     }
+
     public int getMultiplicationCount() {
         return multiplicationCount;
     }
+
     public int getAdditionCount() {
         return additionCount;
     }
@@ -76,7 +78,7 @@ public class BNetwork {
 
         }
         double result = probes.get(0);
-        for (int i=1; i< probes.size();i++) {
+        for (int i = 1; i < probes.size(); i++) {
             result *= probes.get(i);
             multiplicationCount++;
         }
@@ -86,23 +88,65 @@ public class BNetwork {
 
     }
 
-    public Double naiveAlgo(String targetVar, String targetValue, Map<String, String> evidence){
+    public Double naiveAlgo(String targetVar, String targetValue, Map<String, String> evidence) {
         return 0.0;
 
     }
 
-    public Factor createFactor(Variable var){
+    //helpers pour algo VE
+    public Factor createFactor(Variable var) {
         Cpt varCpt = var.getCpt();
         Map<Map<String, String>, Double> table = varCpt.getTable();
         List<Variable> varList = new ArrayList<>();
         varList.add(var);
-        if(var.hasParents()){
-        varList.addAll(var.getParents());
+        if (var.hasParents()) {
+            varList.addAll(var.getParents());
         }
-        Factor varFactor = new Factor(varList,table);
+        Factor varFactor = new Factor(varList, table);
 
         return varFactor;
 
     }
+
+    public void findAncestors(Variable var, List<Variable> ancestors) {
+        for (Variable parent : var.getParents()) {
+            if (!ancestors.contains(parent)) {
+                ancestors.add(parent);
+                findAncestors(parent, ancestors);
+            }
+        }
+    }
+
+    public List<Factor> variableElimination(Variable queryVar, String queryVal, Map<Variable, String> evidence, String eliminationStrategy) {
+        List<Variable> queryVars = new ArrayList<>();
+        queryVars.add(queryVar);
+        queryVars.addAll(evidence.keySet());
+        List<Variable> factorTocreate = new ArrayList<>();
+        //הכנה של רשימת המשתנים שצריכים ליצור עבורם פקטור
+        for (Variable var : queryVars) {
+            if (!factorTocreate.contains(var)) {
+                factorTocreate.add(var);
+            }
+            findAncestors(var, factorTocreate);
+        }
+
+        //יצירת הפקטורים
+        List<Factor> factors = new ArrayList<>();
+        for (Variable var : factorTocreate) {
+            Factor fac = createFactor(var);
+            //אלימינציה של שורות ועמודות לא רלוונטיות של פקטורים המכיליםoutcome שונה של המשתני evidence
+            for (Variable evi : evidence.keySet()) {
+                if (fac.getVariables().contains(evi)) {
+                    Map<Map<String, String>, Double> reduced = fac.reduceEvidence(evi, evidence.get(evi));
+                    fac.setFactor(reduced);
+                }
+            }
+            factors.add(fac);
+        }
+        return factors;
+
+
+    }
+
 
 }
