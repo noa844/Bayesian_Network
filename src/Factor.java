@@ -1,0 +1,191 @@
+import java.util.*;
+
+public class Factor implements Comparable {
+    private List<Variable> _variables;
+    private Map<Map<String, String>, Double> _factor;
+
+
+    public Factor(Collection<Variable> variables) {
+        this._variables = new ArrayList<>(variables);
+        this._factor = new LinkedHashMap<>();
+    }
+
+    public Factor(Collection<Variable> variables, Map<Map<String, String>, Double> table) {
+        this._variables = new ArrayList<>(variables);
+        this._factor = new LinkedHashMap<>(table);
+    }
+
+//    //בנאי מעתיק
+//    public Factor(Factor other) {
+//        this._variables = new ArrayList<>(other._variables);
+//        this._factor = new LinkedHashMap<>();
+//        for (Map.Entry<Map<String, String>, Double> e : other._factor.entrySet()) {
+//            this._factor.put(new LinkedHashMap<>(e.getKey()), e.getValue());
+//        }
+//    }
+
+    public void setFactor(Map<Map<String, String>, Double> table) {
+        _factor.clear();
+        _factor.putAll(table);
+    }
+
+    public void addRow(Map<String, String> assignment, double prob) {
+        _factor.put((new LinkedHashMap<>(assignment)), prob);
+    }
+
+
+    public List<Variable> getVariables() {
+        return _variables;
+    }
+
+    public Map<Map<String, String>, Double> getfactor() {
+        return _factor;
+    }
+
+    public double getProb(Map<String, String> assignment) {
+        Double prob = _factor.get(assignment);
+        if (prob == null) {
+            throw new NullPointerException("prob value doesn't exist for this key");
+        }
+        return prob;
+    }
+
+
+    public int size() {
+        return _factor.size();
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        return 0;
+    }
+
+    public Factor eliminateVar(String var) {
+        List<Variable> newVars = new ArrayList<>();//filter variables
+        int i = 0;
+        while (i < _variables.size()) {
+            Variable v = _variables.get(i);
+            if (!v.getName().equals(var)) {
+                newVars.add(v);
+            }
+            i++;
+        }
+        List<Map<String, String>> newKeys = Tools.generateCombinations(newVars);
+        Factor newFactor = new Factor(newVars);
+
+        for (Map<String, String> newFactorKey : newKeys) {//pour chaque combinaison de la nouvelle table
+            double sum = 0.0;
+            for (Map<String, String> oldFactorKey : _factor.keySet()) { //parcour chaque ligne de l'ancienne table avec les cles correspondente au cles de la nouvelle table
+                if (oldFactorKey.entrySet().containsAll(newFactorKey.entrySet())) {
+                    sum += _factor.get(oldFactorKey);
+                }
+            }
+            newFactor.addRow(newFactorKey, sum);
+        }
+
+        return newFactor;
+
+    }
+
+    public void normalize() {
+        double total = 0.0;
+
+        // Calculer la somme totale des probabilités
+        for (double prob : _factor.values()) {
+            total += prob;
+        }
+
+        // Éviter la division par zéro
+        if (total == 0.0) {
+            throw new ArithmeticException("La somme des probabilités est zéro, impossible de normaliser.");
+        }
+
+        // Normaliser chaque probabilité
+        for (Map<String, String> key : _factor.keySet()) {
+            _factor.put(key, _factor.get(key) / total);
+
+        }
+    }
+
+
+    //utiliser juste apres setTable
+    public Map<Map<String, String>, Double> reduceEvidence(Variable evidence, String out) {
+
+        Iterator<Map<String, String>> iterator = _factor.keySet().iterator();
+
+        while (iterator.hasNext()) {
+            Map<String, String> key = iterator.next();
+            String varValue = key.get(evidence.getName());
+
+            if (!varValue.equals(out)) {
+                iterator.remove(); //  si la valeur est différente, on enlève toute la ligne
+            } else {
+                //  Sinon, il faut juste enlever la variable de la clé
+                key.remove(evidence.getName());
+            }
+        }
+
+        _variables.remove(evidence);
+
+        return _factor;
+
+
+    }
+
+    public Factor join(Factor f2) {
+        //יוצרים את הרשימה של variables שיכיל הפקטור
+        Set<Variable> factorVars = new LinkedHashSet<>();
+        factorVars.addAll(this.getVariables());
+        factorVars.addAll(f2.getVariables());
+
+        //הפקטור המאוחד
+        Factor FactorResult = new Factor(factorVars);
+
+        List<Map<String, String>> combinations = Tools.generateCombinations(factorVars);
+
+
+        for (Map<String, String> assignment : combinations) {
+            Map<String, String> keyF1 = filterKey(assignment, this.getVariables());
+            double p1 = this.getProb(keyF1);
+            Map<String, String> keyF2 = filterKey(assignment, f2.getVariables());
+            double p2 = f2.getProb(keyF2);
+            FactorResult.addRow(assignment, p1 * p2);
+
+        }
+
+        return FactorResult;
+
+    }
+
+    //מפלטר
+    public static Map<String, String> filterKey(Map<String, String> combination, List<Variable> variables) {
+
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Variable var : variables) {
+            result.put(var.getName(), combination.get(var.getName()));
+        }
+
+        return result;
+    }
+
+//    //מפלטר
+//    public static Map<Map<String, String>,Double> filterMap(Map<String, String> combination, List<Variable> keys) {
+//
+//        Map<Map<String, String>,Double> result = new LinkedHashMap<>();
+//        for (Variable var : variables) {
+//            result.put(var.getName(), combination.get(var.getName()));
+//        }
+//
+//        return result;
+//    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Factor:\n");
+        for (Map.Entry<Map<String, String>, Double> entry : _factor.entrySet()) {
+            sb.append("  ").append(entry.getKey()).append(" => ").append(entry.getValue()).append("\n");
+        }
+        return sb.toString();
+    }
+}
