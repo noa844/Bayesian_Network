@@ -9,10 +9,9 @@ public class Cpt {
     }
 
     public Map<Map<String, String>, Double> getTable() {
+
         return _CPT;
     }
-
-
 
 
     public double getProb(List<String> list) {
@@ -22,6 +21,11 @@ public class Cpt {
             throw new NullPointerException("prob value doesn't exist for this key");
         }
         return prob;
+    }
+
+    public int getSize() {
+
+        return _CPT.size();
     }
 
     public boolean isEmpty(){

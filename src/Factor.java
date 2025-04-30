@@ -4,7 +4,8 @@ public class Factor implements Comparable {
     private List<Variable> _variables;
     private Map<Map<String, String>, Double> _factor;
 
-
+    public Factor(){
+    }
     public Factor(Collection<Variable> variables) {
         this._variables = new ArrayList<>(variables);
         this._factor = new LinkedHashMap<>();
@@ -51,13 +52,37 @@ public class Factor implements Comparable {
     }
 
 
-    public int size() {
+    public int getSize() {
+
         return _factor.size();
     }
 
     @Override
     public int compareTo(Object o) {
-        return 0;
+        Factor f2 = (Factor) o;
+        int f1Size = this.getSize();
+        int f2Size = f2.getSize();
+
+        if (f1Size > f2Size) {
+            return 1;
+        } else if (f1Size < f2Size) {
+            return -1;
+
+        } else {
+            int f1Ascii = this.getVarsAscii(_variables);
+            int f2Ascii = f2.getVarsAscii(f2.getVariables());
+            return Integer.compare(f1Ascii, f2Ascii);
+        }
+    }
+
+    private int getVarsAscii(List<Variable> vars) {
+        int sum = 0;
+        for (Variable var : vars) {
+            for (char c : var.getName().toCharArray()) {
+                sum += c;
+            }
+        }
+        return sum;
     }
 
     public Factor eliminateVar(String var) {
@@ -88,27 +113,23 @@ public class Factor implements Comparable {
     }
 
     public void normalize() {
-        double total = 0.0;
-
+        double alpha = 0.0;
         // Calculer la somme totale des probabilités
         for (double prob : _factor.values()) {
-            total += prob;
+            alpha += prob;
         }
-
         // Éviter la division par zéro
-        if (total == 0.0) {
-            throw new ArithmeticException("La somme des probabilités est zéro, impossible de normaliser.");
-        }
+        if (alpha != 0.0) {
+            // Normaliser chaque probabilité
+            for (Map<String, String> key : _factor.keySet()) {
+                _factor.put(key, _factor.get(key) / alpha);
 
-        // Normaliser chaque probabilité
-        for (Map<String, String> key : _factor.keySet()) {
-            _factor.put(key, _factor.get(key) / total);
-
+            }
         }
     }
 
 
-    //utiliser juste apres setTable
+    //pas oublier d'utiliser juste apres setTable
     public Map<Map<String, String>, Double> reduceEvidence(Variable evidence, String out) {
         Map<Map<String, String>, Double> newTable = new LinkedHashMap<>();//nouvelle table
 
@@ -120,12 +141,12 @@ public class Factor implements Comparable {
 
             if (varOut.equals(out)) {//si dan la ligne se trouve evidence avec le outcome rechercher on cree une nouvelle cle avec les meme valeur sans l'evidence
                 Map<String, String> newKey = new LinkedHashMap<>();
-                for(String var : key.keySet()){
-                    if(!var.equals(evidence.getName())){
-                        newKey.put(var,key.get(var));
+                for (String var : key.keySet()) {
+                    if (!var.equals(evidence.getName())) {
+                        newKey.put(var, key.get(var));
                     }
                 }
-                newTable.put(newKey,_factor.get(key));
+                newTable.put(newKey, _factor.get(key));
 
             }
         }
@@ -172,7 +193,6 @@ public class Factor implements Comparable {
 
         return result;
     }
-
 
 
     @Override

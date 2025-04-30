@@ -14,9 +14,45 @@ public class Main {
         Variable D = bn.getVariable("D");
         Map<Variable, String> row1 = new LinkedHashMap<>();
         row1.put(D, "true");
+        bn.resetCounters();
+        double prob = bn.variableElimination(A,"true",row1,"min factor size");
+        System.out.println(prob);
+        int add = bn.getAdditionCount();
+        int mul = bn.getMultiplicationCount();
+        System.out.println("addition: " + add + ", multiplication: " + mul);
 
-        List<Factor> listF = bn.variableElimination(A,"true",row1,"w");
-        System.out.println(listF);
+
+
+
+//        List<Factor> testjoin = new ArrayList<>();
+//        testjoin.add(listF.get(1));
+//        testjoin.add(listF.get(2));
+//        System.out.println(testjoin);
+//        Factor query = bn.joinProcessor(testjoin);
+//        System.out.println(query);
+//        Factor newf = query.eliminateVar("B");
+//        System.out.println(newf);
+
+
+//        Factor query = bn.eliminateProcessor(order,listF);
+//        int add = bn.getAdditionCount();
+//        int mul = bn.getMultiplicationCount();
+//        System.out.println(query);
+//        System.out.println("addition:" + add + ", multiplication:" + mul);
+
+        //test sort by factor
+//        List<String> order2 = new ArrayList<>();
+//        order2.add("B");
+//        order2.add("C");
+//        order2.add("A");
+//        order2.add("D");
+//        bn.sortByFactorSize(order2);
+//        System.out.println(order2);
+
+
+
+
+
 
 
 
