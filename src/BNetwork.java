@@ -141,6 +141,9 @@ public class BNetwork {
                     toJoin.add(fac);
                 }
             }
+            if (toJoin.isEmpty()) { //אם המשתנה hidden נמחק מכל הפקטורים
+                continue;
+            }
             System.out.println("Eliminating: " + currHidden);
             System.out.println("Factors before join:");
             for (Factor f : toJoin) System.out.println(f);
@@ -154,7 +157,9 @@ public class BNetwork {
             int after = newFactor.getSize();
             additionCount += before - after;
 
-            currentFactors.add(newFactor);//הוספת הפקטור החדש לרשימת הפקטורים
+            if(newFactor.getSize() > 1) {
+                currentFactors.add(newFactor);//הוספת הפקטור החדש לרשימת הפקטורים
+            }
             System.out.println("Factor after elimination:");
             System.out.println(newFactor);
         }
@@ -194,7 +199,7 @@ public class BNetwork {
         return min;
     }
 
-    public double variableElimination(Variable queryVar, String queryVal, Map<Variable, String> evidence, String eliminationStrategy) {
+    public double variableElimination(Variable queryVar, String queryVal, Map<Variable, String> evidence, EliminationStrategy strategy) {
         List<Variable> queryVars = new ArrayList<>();
         queryVars.add(queryVar);
         queryVars.addAll(evidence.keySet());
@@ -222,20 +227,22 @@ public class BNetwork {
                 factors.add(fac);
             }
         }
+        System.out.println(factors);
         //שלב האלימינציה
         List<String> toEliminate = getHidden(queryVar, evidence);
         Factor result = new Factor();
         //קריאה למיון סדר האלמינציה לפי הstrategy שהועבר
-        if (eliminationStrategy.equals("lex")) {
+        if (strategy == EliminationStrategy.LEX) {
             System.out.println("to eliminate"+toEliminate);
             Collections.sort(toEliminate);
             result = eliminateProcessor(toEliminate, factors);
         }
-        else if (eliminationStrategy.equals("min factor size")) {
+        else if (strategy == EliminationStrategy.MIN_FACTOR_SIZE) {
             sortByFactorSize(toEliminate);
             result = eliminateProcessor(toEliminate, factors);
         }
         result.normalize();
+        additionCount++;
         Map<String,String> query = new HashMap<>();
         query.put(queryVar.getName(),queryVal);
 
@@ -263,7 +270,7 @@ public class BNetwork {
             }
         }
         toEliminate.clear();
-        for (int i = 0; i < cptsArr.length; i++) {
+        for(int i = 0; i < cptsArr.length; i++) {
            toEliminate.add(cptsArr[i].getVariable().getName());
         }
     }

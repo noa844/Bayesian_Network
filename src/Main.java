@@ -8,14 +8,16 @@ public class Main {
     public static void main(String[] args) throws Exception {
         BNetwork bn = new BNetwork();
         XmlParser parser = new XmlParser();
-        parser.loadBnFromXml("net_ex.xml", bn);
+        parser.loadBnFromXml("alarm_net.xml", bn);
         System.out.println(bn);
-        Variable A = bn.getVariable("A");
-        Variable D = bn.getVariable("D");
-        Map<Variable, String> row1 = new LinkedHashMap<>();
-        row1.put(D, "true");
+        Variable J = bn.getVariable("J");
+        Variable B = bn.getVariable("B");
+        Variable M = bn.getVariable("M");
+        Map<Variable, String> evidence = new LinkedHashMap<>();
+        evidence.put(B, "T");
+
         bn.resetCounters();
-        double prob = bn.variableElimination(A,"true",row1,"min factor size");
+        double prob = bn.variableElimination(J,"T",evidence,EliminationStrategy.MIN_FACTOR_SIZE);
         System.out.println(prob);
         int add = bn.getAdditionCount();
         int mul = bn.getMultiplicationCount();
