@@ -1,7 +1,7 @@
 public enum EliminationStrategy {
 
-        LEX,
-        MIN_FACTOR_SIZE
+        LEX, //algo 2
+        MIN_FACTOR_SIZE //algo 3
 
 
 }

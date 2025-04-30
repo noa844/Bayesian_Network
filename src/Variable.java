@@ -87,6 +87,7 @@ public class Variable {
 
     @Override
     public int hashCode() {
+
         return _name.hashCode();
     }
 

@@ -73,7 +73,6 @@ public class XmlParser {
                     break;
                 }
             }
-
         }
     }
 

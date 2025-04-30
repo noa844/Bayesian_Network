@@ -58,7 +58,6 @@ public class Cpt {
 
 
     // Recursive function to generate all CPT combinations corresponding to each probability.
-    //
     // The recursion iterates over the outcomes of the variable's parents.
     // For each parent (starting from the first in the list), we loop over all its outcomes,
     // and for each such outcome we continue the recursion deeper.

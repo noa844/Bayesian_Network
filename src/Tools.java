@@ -25,6 +25,7 @@ public class Tools {
 
         return result;
     }
+
     public static double roundTo5Decimals(double result) {
         return new BigDecimal(result)
                 .setScale(5, RoundingMode.HALF_UP)

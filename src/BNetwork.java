@@ -107,7 +107,7 @@ public class BNetwork {
 
     }
 
-    //helpers pour algo VE
+    //helpers for VE
     public Factor createFactor(Variable var) {
         Cpt varCpt = var.getCpt();
         Map<Map<String, String>, Double> table = varCpt.getTable();
@@ -247,7 +247,7 @@ public class BNetwork {
         query.put(queryVar.getName(),queryVal);
 
 
-        return result.getProb(query);
+        return Tools.roundTo5Decimals(result.getProb(query));
     }
 
     public void sortByFactorSize(List<String> toEliminate) {

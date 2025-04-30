@@ -16,14 +16,6 @@ public class Factor implements Comparable {
         this._factor = new LinkedHashMap<>(table);
     }
 
-//    //בנאי מעתיק
-//    public Factor(Factor other) {
-//        this._variables = new ArrayList<>(other._variables);
-//        this._factor = new LinkedHashMap<>();
-//        for (Map.Entry<Map<String, String>, Double> e : other._factor.entrySet()) {
-//            this._factor.put(new LinkedHashMap<>(e.getKey()), e.getValue());
-//        }
-//    }
 
     public void setFactor(Map<Map<String, String>, Double> table) {
         _factor.clear();
