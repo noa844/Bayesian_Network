@@ -32,5 +32,20 @@ public class Tools {
                 .doubleValue();
     }
 
+    public static Map<String, String> listToAssignmentMap(List<String> list) {
+        Map<String, String> assignment = new HashMap<>();
+        if (list.size() % 2 != 0) {
+            throw new IllegalArgumentException("List size must be even (key-value pairs).");
+        }
+
+        for (int i = 0; i < list.size(); i += 2) {
+            String key = list.get(i);
+            String value = list.get(i + 1);
+            assignment.put(key, value);
+        }
+
+        return assignment;
+    }
+
 
 }

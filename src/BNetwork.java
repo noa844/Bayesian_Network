@@ -14,6 +14,7 @@ public class BNetwork {
     }
 
     public Variable getVariable(String name) {
+
         return _variables.get(name);
     }
 
@@ -30,7 +31,7 @@ public class BNetwork {
         additionCount = 0;
     }
 
-    public List<String> getHidden(Variable query, Map<Variable, String> evidence) {
+    private List<String> getHidden(Variable query, Map<Variable, String> evidence) {
         List<String> hidden = new ArrayList<>();
         for (String var : _variables.keySet()) {
             Variable v = getVariable(var);
@@ -42,20 +43,11 @@ public class BNetwork {
         return hidden;
     }
 
-    public static Map<String, String> listToAssignmentMap(List<String> list) {
-        Map<String, String> assignment = new HashMap<>();
-        if (list.size() % 2 != 0) {
-            throw new IllegalArgumentException("List size must be even (key-value pairs).");
-        }
-
-        for (int i = 0; i < list.size(); i += 2) {
-            String key = list.get(i);
-            String value = list.get(i + 1);
-            assignment.put(key, value);
-        }
-
-        return assignment;
+    private double getDirectlyFromCpts(Variable query, Map<Variable, String> evidence){
+        
+        return prob;
     }
+
 
 
     @Override
@@ -71,7 +63,7 @@ public class BNetwork {
         return sb.toString();
     }
 
-    public Double calFullJointProb(Map<String, String> elements) {
+    public Double fullJointProb(Map<String, String> elements) {
         List<Double> probes = new ArrayList<>();
         for (String key : elements.keySet()) {
             Variable v = getVariable(key);
@@ -91,19 +83,65 @@ public class BNetwork {
             probes.add(prob);
 
         }
+        System.out.println(probes);
         double result = probes.get(0);
         for (int i = 1; i < probes.size(); i++) {
             result *= probes.get(i);
             multiplicationCount++;
         }
 
-        return result;
-
+        return Tools.roundTo5Decimals(result);
 
     }
 
-    public Double naiveAlgo(String targetVar, String targetValue, Map<String, String> evidence) {
-        return 0.0;
+    public double naiveAlgo(String queryV, String queryVal, Map<String, String> evidences) {
+        Variable queryVar = getVariable(queryV); //המרת המשתנים לאובייקטים variable
+        Map<Variable, String> evidence = new LinkedHashMap<>();
+        for (String var : evidences.keySet()){
+            Variable variable = getVariable(var);
+            evidence.put(variable,evidences.get(var));
+        }
+        //יצירת קומבינציות אפשריות של כל משתני הhidden
+        List<String> hidden = getHidden(queryVar,evidence);
+        List<Variable> hiddenVars = new ArrayList<>();
+        for (String var : hidden){ //המרה למשתנים
+            Variable variable = getVariable(var);
+            hiddenVars.add(variable);
+        }
+        List<Map<String, String>> combinations = Tools.generateCombinations(hiddenVars);
+        for (Map<String,String> comb : combinations){
+            comb.putAll(evidences);
+        }
+
+        //ההסתברות של המונה
+        double result = 0.0;
+        //ההסתברות של המכנה
+        double sum = 0.0;
+
+    //מעבר על כל הoutcomes של משתנה הquery ליצירת קומבינציות מתאימות לכל אחת
+        List<String> queryOuts = getVariable(queryV).getOutcomes();
+        for(String outcome : queryOuts){
+            System.out.println("== Testing outcome: " + outcome + " ==");
+            for (Map<String,String> comb : combinations){
+                comb.put(queryV,outcome);
+                double prob = fullJointProb(comb);
+                System.out.println(comb + " => " + prob);
+                if(outcome.equals(queryVal)){
+                    result += prob;
+                }
+                sum+=prob;
+            }
+        }
+
+        if(sum != 0.0){
+            result = result/sum;
+        }
+
+        int addsInDenominator = queryOuts.size() - 1;// מספר החיבורים במכנה לנרמול
+        int additions = ((combinations.size() - 1) * queryOuts.size()) + addsInDenominator;
+        additionCount += additions;
+
+        return  Tools.roundTo5Decimals(result);
 
     }
 
@@ -199,22 +237,29 @@ public class BNetwork {
         return min;
     }
 
-    public double variableElimination(Variable queryVar, String queryVal, Map<Variable, String> evidence, EliminationStrategy strategy) {
+    public double variableElimination(String queryV, String queryVal, Map<String, String> evidences, EliminationStrategy strategy) {
+        Variable queryVar = getVariable(queryV); //המרת המשתנים לאובייקטים variable
+        Map<Variable, String> evidence = new LinkedHashMap<>();
+        for (String var : evidences.keySet()){
+            Variable variable = getVariable(var);
+            evidence.put(variable,evidences.get(var));
+        }
+        //הכנת רשימה של כל המשתנים הנמצאים בprobaability query
         List<Variable> queryVars = new ArrayList<>();
         queryVars.add(queryVar);
         queryVars.addAll(evidence.keySet());
-        List<Variable> factorTocreate = new ArrayList<>();
         //הכנה של רשימת המשתנים שצריכים ליצור עבורם פקטור
+        List<Variable> factorToCreate = new ArrayList<>();
         for (Variable var : queryVars) {
-            if (!factorTocreate.contains(var)) {
-                factorTocreate.add(var);
+            if (!factorToCreate.contains(var)) {
+                factorToCreate.add(var);
             }
-            findAncestors(var, factorTocreate);
+            findAncestors(var, factorToCreate);
         }
 
         // לולאה ראשית ליצירת הפקטורים וצמצום פקטורים עם שורה בודדת
         List<Factor> factors = new ArrayList<>();
-        for (Variable var : factorTocreate) {
+        for (Variable var : factorToCreate) {
             Factor fac = createFactor(var);
             //אלימינציה של שורות ועמודות לא רלוונטיות של פקטורים המכיליםoutcome שונה של המשתני evidence
             for (Variable evi : evidence.keySet()) {//לואלה על המשתני evidence כדי לבדוק אם הפקטור שבתהליך מכיל אחד מהם אם כן נוריד את השורות הלו רלוונטיות
@@ -241,8 +286,12 @@ public class BNetwork {
             sortByFactorSize(toEliminate);
             result = eliminateProcessor(toEliminate, factors);
         }
+        //נרמול הפקטור הבודד האחרון שהתקבל
         result.normalize();
-        additionCount++;
+        int addition = result.getSize() - 1;
+        additionCount+=addition;
+
+        //get probability query from factor result
         Map<String,String> query = new HashMap<>();
         query.put(queryVar.getName(),queryVal);
 

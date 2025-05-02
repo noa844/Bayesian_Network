@@ -15,7 +15,7 @@ public class Cpt {
 
 
     public double getProb(List<String> list) {
-        Map<String, String> assignment = BNetwork.listToAssignmentMap(list);
+        Map<String, String> assignment = Tools.listToAssignmentMap(list);
         Double prob = _CPT.get(assignment);
         if(prob==null){
             throw new NullPointerException("prob value doesn't exist for this key");

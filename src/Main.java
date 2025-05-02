@@ -10,18 +10,55 @@ public class Main {
         XmlParser parser = new XmlParser();
         parser.loadBnFromXml("alarm_net.xml", bn);
         System.out.println(bn);
-        Variable J = bn.getVariable("J");
-        Variable B = bn.getVariable("B");
-        Variable M = bn.getVariable("M");
-        Map<Variable, String> evidence = new LinkedHashMap<>();
-        evidence.put(B, "T");
+//
+//        Map<String, String> evidence = new LinkedHashMap<>();
+//        evidence.put("B", "T");
+//
+//        bn.resetCounters();
+//        double prob = bn.variableElimination("J","T",evidence,EliminationStrategy.LEX);
+//        System.out.println(prob);
+//        int add = bn.getAdditionCount();
+//        int mul = bn.getMultiplicationCount();
+//        System.out.println("addition: " + add + ", multiplication: " + mul);
+
+//        //P(B=T|J=T,M=T),2
+//        Map<String, String> evidence2 = new LinkedHashMap<>();
+//        evidence2.put("M", "T");
+//        evidence2.put("J", "T");
+//        bn.resetCounters();
+//        double prob2= bn.naiveAlgo("B","T",evidence2);
+//        System.out.println(prob2);
+//        int add2 = bn.getAdditionCount();
+//        int mul2 = bn.getMultiplicationCount();
+//        System.out.println("addition: " + add2 + ", multiplication: " + mul2);
+
+       // P(J=T|B=T),1
+        Map<String, String> evidence2 = new LinkedHashMap<>();
+        evidence2.put("B", "T");
 
         bn.resetCounters();
-        double prob = bn.variableElimination(J,"T",evidence,EliminationStrategy.MIN_FACTOR_SIZE);
-        System.out.println(prob);
-        int add = bn.getAdditionCount();
-        int mul = bn.getMultiplicationCount();
-        System.out.println("addition: " + add + ", multiplication: " + mul);
+        double prob2= bn.naiveAlgo("J","T",evidence2);
+        System.out.println(prob2);
+        int add2 = bn.getAdditionCount();
+        int mul2 = bn.getMultiplicationCount();
+        System.out.println("addition: " + add2 + ", multiplication: " + mul2);
+
+//        //P(B=F,E=T,A=T,M=T,J=F),1
+//        Map<String, String> evidence2 = new LinkedHashMap<>();
+//        evidence2.put("M", "T");
+//        evidence2.put("B", "F");
+//        evidence2.put("E", "T");
+//        evidence2.put("A", "T");
+//        evidence2.put("J", "F");
+//        bn.resetCounters();
+//        double prob2= bn.fullJointProb(evidence2);
+//        System.out.printf("%f",prob2);
+//        System.out.println("");
+//        int add2 = bn.getAdditionCount();
+//        int mul2 = bn.getMultiplicationCount();
+//        System.out.println("addition: " + add2 + ", multiplication: " + mul2);
+//
+
 
 
 
