@@ -50,6 +50,9 @@ public class Variable {
         return !_parents.isEmpty();
     }
 
+
+
+
     public void setCpt(){
         if(_cpt.isEmpty()){
         _cpt.loadCpt(this);

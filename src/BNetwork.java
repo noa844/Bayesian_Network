@@ -42,11 +42,24 @@ public class BNetwork {
 
         return hidden;
     }
-
-    private double getDirectlyFromCpts(Variable query, Map<Variable, String> evidence){
-        
-        return prob;
-    }
+//    //return -1 if probability not found.
+//    private double getDirectlyFromCpts(Variable query, Map<Variable, String> evidence){
+//        List<Variable> queryParents = query.getParents();
+//        if(queryParents.size() == 0){
+//            return -1;
+//        }
+//        List<Variable> queryAncestors = new ArrayList<>();
+//        findAncestors(query,queryAncestors);
+//        for (Variable evi : evidence.keySet()){
+//            if(!queryAncestors.contains(evi)){
+//                  return -1;
+//            }
+//        }
+//        Cpt queryCpt = query.getCpt();
+//        queryCpt.
+//
+//        return prob;
+//    }
 
 
 
@@ -83,14 +96,14 @@ public class BNetwork {
             probes.add(prob);
 
         }
-        System.out.println(probes);
+
         double result = probes.get(0);
         for (int i = 1; i < probes.size(); i++) {
             result *= probes.get(i);
             multiplicationCount++;
         }
 
-        return Tools.roundTo5Decimals(result);
+        return result;
 
     }
 
@@ -121,11 +134,9 @@ public class BNetwork {
     //מעבר על כל הoutcomes של משתנה הquery ליצירת קומבינציות מתאימות לכל אחת
         List<String> queryOuts = getVariable(queryV).getOutcomes();
         for(String outcome : queryOuts){
-            System.out.println("== Testing outcome: " + outcome + " ==");
             for (Map<String,String> comb : combinations){
                 comb.put(queryV,outcome);
                 double prob = fullJointProb(comb);
-                System.out.println(comb + " => " + prob);
                 if(outcome.equals(queryVal)){
                     result += prob;
                 }
@@ -141,7 +152,7 @@ public class BNetwork {
         int additions = ((combinations.size() - 1) * queryOuts.size()) + addsInDenominator;
         additionCount += additions;
 
-        return  Tools.roundTo5Decimals(result);
+        return result;
 
     }
 
@@ -296,7 +307,7 @@ public class BNetwork {
         query.put(queryVar.getName(),queryVal);
 
 
-        return Tools.roundTo5Decimals(result.getProb(query));
+        return result.getProb(query);
     }
 
     public void sortByFactorSize(List<String> toEliminate) {
