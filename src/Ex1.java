@@ -7,8 +7,11 @@ import java.util.Map;
 
 public class Ex1 {
     public static void main(String[] args) throws Exception {
-        BufferedReader reader = new BufferedReader(new FileReader("input_for_alarm2_example.txt"));
-        BufferedWriter writer = new BufferedWriter(new FileWriter("output_alarm2_example.txt"));
+
+        long startTime = System.currentTimeMillis();
+
+        BufferedReader reader = new BufferedReader(new FileReader("input_for_big_net.txt"));
+        BufferedWriter writer = new BufferedWriter(new FileWriter("output_big_net2.txt"));
 
         String xmlFile = reader.readLine().trim();
         BNetwork bn = new BNetwork();
@@ -87,5 +90,8 @@ public class Ex1 {
         }
         reader.close();
         writer.close();
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("Execution time: " + (endTime - startTime) + " ms");
     }
 }

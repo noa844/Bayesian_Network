@@ -123,6 +123,7 @@ public class Factor implements Comparable {
 
     //pas oublier d'utiliser juste apres setTable
     public Map<Map<String, String>, Double> reduceEvidence(Variable evidence, String out) {
+
         Map<Map<String, String>, Double> newTable = new LinkedHashMap<>();//nouvelle table
 
         Iterator<Map<String, String>> iterator = _factor.keySet().iterator();//iteration sur la table actuel
@@ -144,7 +145,6 @@ public class Factor implements Comparable {
         }
 
         _variables.remove(evidence);
-
         return newTable;
 
 
