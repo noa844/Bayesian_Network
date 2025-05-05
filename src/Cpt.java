@@ -12,9 +12,14 @@ public class Cpt {
 
         return _CPT;
     }
-
-
-    public double getProb(List<String> list) {
+    public double getProbFromMap(Map<String,String> assignment){
+        Double prob = _CPT.get(assignment);
+        if(prob==null){
+            throw new NullPointerException("prob value doesn't exist for this key");
+        }
+        return prob;
+    }
+    public double getProbFromList(List<String> list) {
         Map<String, String> assignment = Tools.listToAssignmentMap(list);
         Double prob = _CPT.get(assignment);
         if(prob==null){

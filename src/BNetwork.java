@@ -45,27 +45,42 @@ public class BNetwork {
 
         return hidden;
     }
-//    //return -1 if probability not found.
-//    private double getDirectlyFromCpts(Variable query, Map<Variable, String> evidence){
-//        List<Variable> queryParents = query.getParents();
-//        if(queryParents.size() == 0){
-//            return -1;
-//        }
-//        List<Variable> queryAncestors = new ArrayList<>();
-//        findAncestors(query,queryAncestors);
-//        for (Variable evi : evidence.keySet()){
-//            if(!queryAncestors.contains(evi)){
-//                  return -1;
-//            }
-//        }
-//        Cpt queryCpt = query.getCpt();
-//        queryCpt.
-    //
-    //si get hidden = zero, existe.
-    //sinon verifie les parent
-//
-//        return prob;
-//    }
+    //return -1 if probability not found.
+    private double getDirectlyFromCpt(Variable query, String queryVal, Map<Variable, String> evidence){
+        if(query.getParents().isEmpty() && !evidence.isEmpty()){ //אם query לא תלוי באף אחד אבל השאילתה מכילה לפחות משתנה evidence אחד
+            return -1;                                             //לא יתכן שההסתברות נמצאת בטבלה
+        }
+        //נבדוק אם משתני evidence מוכלים בקבוצת אבות הקדמונים
+        List<Variable> queryAncestors = new ArrayList<>();
+        findAncestors(query,queryAncestors);
+        Map<String,String> assignmentKey = new HashMap<>(); //evidences
+        List<Variable> queryParents= query.getParents();//vars in query cpt
+
+        for (Variable evi : evidence.keySet()){
+            if(!queryAncestors.contains(evi)){
+                //אם אבות קדמונים לא מכיל את evidence אז ההסתברות לא נמצאת בcpt של query
+                  return -1;
+            }
+            else{ //אחרת, אם נמצא באבות קדמונים
+                if(queryParents.contains(evi)) { //ואם גם שייך לרשימת ההורים הישירים
+                    assignmentKey.put(evi.getName(), evidence.get(evi));  //נוסיף אותו לmap הסופי המייצג את הkey שמחזיק את ההסתברות של השאילתה בטבלה של query
+                }else{ //אחרת אם לא נמצא ברשימה של ההורים הישירים אז גם לא נמצא בטבלת cpt של query
+                    return -1;
+                }
+            }
+        }
+        //סוף הלולאה, כל המשתני evidence הם אבות קדמונים של query
+        // בתוך assignmentKey נשאר רק האבות הישירים של query ונוסיף את query עצמו
+        assignmentKey.put(query.getName(),queryVal);
+
+        //ניגש לטבלה ונשלוף את ההסתברות
+        Cpt queryCpt = query.getCpt();
+        try {
+            return queryCpt.getProbFromMap(assignmentKey);
+        } catch (NullPointerException e) {
+            return -1;
+        }
+    }
 
 
     @Override
@@ -97,7 +112,7 @@ public class BNetwork {
             assignment.add(key);
             String out = elements.get(key);
             assignment.add(out);
-            Double prob = v.getCpt().getProb(assignment);
+            Double prob = v.getCpt().getProbFromList(assignment);
             probes.add(prob);
 
         }
@@ -119,6 +134,13 @@ public class BNetwork {
             Variable variable = getVariable(var);
             evidence.put(variable, evidences.get(var));
         }
+
+        //check if probability result already exist in the query variable Cpt
+        double result1= getDirectlyFromCpt(queryVar,queryVal,evidence);
+        if(result1 != -1){
+            return result1;
+        }
+
         //יצירת קומבינציות אפשריות של כל משתני הhidden
         List<String> hidden = getHidden(queryVar, evidence);
         List<Variable> hiddenVars = new ArrayList<>();
@@ -156,7 +178,6 @@ public class BNetwork {
         int addsInDenominator = queryOuts.size() - 1;// מספר החיבורים במכנה לנרמול
         int additions = ((combinations.size() - 1) * queryOuts.size()) + addsInDenominator;
         additionCount += additions;
-        System.out.println("success");
         return result;
 
     }
@@ -255,6 +276,11 @@ public class BNetwork {
             Variable variable = getVariable(var);
             evidence.put(variable, evidences.get(var));
         }
+        //check if probability result already exist in the query variable Cpt
+        double result1= getDirectlyFromCpt(queryVar,queryVal,evidence);
+        if(result1 != -1){
+            return result1;
+        }
         //הכנת רשימה של כל המשתנים הנמצאים בprobaability query
         List<Variable> queryVars = new ArrayList<>();
         queryVars.add(queryVar);
@@ -302,36 +328,9 @@ public class BNetwork {
         //get probability query from factor result
         Map<String, String> query = new HashMap<>();
         query.put(queryVar.getName(), queryVal);
-        System.out.println("success");
-        System.out.println(queryV);
-        System.out.println(queryVal);
         return result.getProb(query);
     }
 
-//    public void sortByFactorSize(List<String> toEliminate) {
-//        VariableCptPair[] cptsArr = new VariableCptPair[toEliminate.size()];
-//        for(int i = 0; i < toEliminate.size();i++){
-//            Variable var = getVariable(toEliminate.get(i));
-//            Cpt varCpt = var.getCpt();
-//            VariableCptPair pair = new VariableCptPair(var,varCpt);
-//            cptsArr[i] = pair;
-//        }
-//        for (int i = cptsArr.length - 1; i >=0 ; i--) {
-//            for (int j = 1; j <= i; j++) {
-//                int jSize = cptsArr[j].getCPT().getSize();
-//                int jMinusOneSize = cptsArr[j-1].getCPT().getSize();
-//                if(jSize < jMinusOneSize){
-//                    VariableCptPair temp = cptsArr[j];
-//                    cptsArr[j] = cptsArr[j - 1];
-//                    cptsArr[j - 1] = temp;
-//                }
-//            }
-//        }
-//        toEliminate.clear();
-//        for(int i = 0; i < cptsArr.length; i++) {
-//           toEliminate.add(cptsArr[i].getVariable().getName());
-//        }
-//    }
 
     public void sortByFactorSize(List<String> toEliminate, List<Factor> factors) {
         List<eliminateProduct> productSizesToSort = new ArrayList<>();

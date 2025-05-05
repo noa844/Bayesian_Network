@@ -10,8 +10,8 @@ public class Ex1 {
 
         long startTime = System.currentTimeMillis();
 
-        BufferedReader reader = new BufferedReader(new FileReader("input_for_big_net.txt"));
-        BufferedWriter writer = new BufferedWriter(new FileWriter("output_big_net2.txt"));
+        BufferedReader reader = new BufferedReader(new FileReader("input.txt"));
+        BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
 
         String xmlFile = reader.readLine().trim();
         BNetwork bn = new BNetwork();
@@ -27,11 +27,10 @@ public class Ex1 {
             int adds = 0;
             int muls = 0;
 
-            if (line.contains("|")) {
+            if (line.contains("|") && line.contains("),")) { //if request contain algo number
                 int closingIndex = line.indexOf(")");
                 String fullQuery = line.substring(2, closingIndex); // the part without "p(" and ")"
                 int algoNumber = Integer.parseInt(line.substring(closingIndex + 2));//after "),"
-
                 String[] mainSplit = fullQuery.split("\\|");
                 String query = mainSplit[0];  // ex: "B=T"
                 String evidences = mainSplit[1];// ex: "J=T,M=T"
@@ -84,6 +83,7 @@ public class Ex1 {
                 muls = bn.getMultiplicationCount();
             }
             Tools.roundTo5Decimals(result);
+
             writer.write(String.format("%.5f,%d,%d", result, adds, muls));
             writer.newLine();
 
@@ -92,6 +92,12 @@ public class Ex1 {
         writer.close();
 
         long endTime = System.currentTimeMillis();
-        System.out.println("Execution time: " + (endTime - startTime) + " ms");
+        long durationMillis = endTime - startTime;
+
+        double durationSeconds = durationMillis / 1000.0;
+        double durationMinutes = durationSeconds / 60.0;
+
+        System.out.printf("Execution time: %.3f seconds (%.2f minutes)%n", durationSeconds, durationMinutes);
+
     }
 }
