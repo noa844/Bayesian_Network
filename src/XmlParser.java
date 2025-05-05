@@ -4,11 +4,8 @@ import java.io.File;
 import java.util.*;
 
 public class XmlParser {
-    /**
-     * Loads a Bayesian Network from an XML file and fills it into the given BNetwork object.
-     * @param path path to the XML file
-     * @param bn the BNetwork object to populate
-     */
+    /// Loads a Bayesian Network from an XML file and fills it into the given BNetwork object.///
+
     public void loadBnFromXml(String path, BNetwork bn)throws Exception{
         File xmlFile = new File(path);
         //Initialize the XML parser

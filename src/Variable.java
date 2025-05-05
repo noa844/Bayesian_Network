@@ -50,9 +50,6 @@ public class Variable {
         return !_parents.isEmpty();
     }
 
-
-
-
     public void setCpt(){
         if(_cpt.isEmpty()){
         _cpt.loadCpt(this);
@@ -79,7 +76,7 @@ public class Variable {
 
         return sb.toString();
     }
-
+    // Equality check based on variable name only
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
