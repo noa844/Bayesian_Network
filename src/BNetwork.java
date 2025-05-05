@@ -35,6 +35,7 @@ public class BNetwork {
         additionCount = 0;
     }
 
+    // Return hidden variables: variables that are neither the query nor evidence
     public List<String> getHidden(Variable query, Map<Variable, String> evidence) {
         List<String> hidden = new ArrayList<>();
         for (String var : _variables.keySet()) {
@@ -46,12 +47,14 @@ public class BNetwork {
 
         return hidden;
     }
+
     //return -1 if probability not found.
     private double getDirectlyFromCpt(Variable query, String queryVal, Map<Variable, String> evidence){
-        if(query.getParents().isEmpty() && !evidence.isEmpty()){ //אם query לא תלוי באף אחד אבל השאילתה מכילה לפחות משתנה evidence אחד
-            return -1;                                             //לא יתכן שההסתברות נמצאת בטבלה
+        // If query has no parents but evidence is not empty, prob not in CPT
+        if(query.getParents().isEmpty() && !evidence.isEmpty()){
+            return -1;
         }
-        //נבדוק אם משתני evidence מוכלים בקבוצת אבות הקדמונים
+        // Check if evidence variables are contained in the set of query’s ancestors
         List<Variable> queryAncestors = new ArrayList<>();
         findAncestors(query,queryAncestors);
         Map<String,String> assignmentKey = new HashMap<>(); //evidences
@@ -59,22 +62,22 @@ public class BNetwork {
 
         for (Variable evi : evidence.keySet()){
             if(!queryAncestors.contains(evi)){
-                //אם אבות קדמונים לא מכיל את evidence אז ההסתברות לא נמצאת בcpt של query
+                // If a variable is not an ancestor of the query, the probability is not in the query CPT
                   return -1;
             }
-            else{ //אחרת, אם נמצא באבות קדמונים
-                if(queryParents.contains(evi)) { //ואם גם שייך לרשימת ההורים הישירים
-                    assignmentKey.put(evi.getName(), evidence.get(evi));  //נוסיף אותו לmap הסופי המייצג את הkey שמחזיק את ההסתברות של השאילתה בטבלה של query
-                }else{ //אחרת אם לא נמצא ברשימה של ההורים הישירים אז גם לא נמצא בטבלת cpt של query
+            else{
+                if(queryParents.contains(evi)) {
+                    // Add to assignment only if it’s a direct parent
+                    assignmentKey.put(evi.getName(), evidence.get(evi));
+                }else{
                     return -1;
                 }
             }
         }
-        //סוף הלולאה, כל המשתני evidence הם אבות קדמונים של query
-        // בתוך assignmentKey נשאר רק האבות הישירים של query ונוסיף את query עצמו
+
+        // Add the query itself to the assignment key
         assignmentKey.put(query.getName(),queryVal);
 
-        //ניגש לטבלה ונשלוף את ההסתברות
         Cpt queryCpt = query.getCpt();
         try {
             return queryCpt.getProbFromMap(assignmentKey);
@@ -83,20 +86,7 @@ public class BNetwork {
         }
     }
 
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Bayesian Network:\n");
-
-        for (Map.Entry<String, Variable> entry : _variables.entrySet()) {
-            sb.append("- ").append(entry.getValue().toString()).append("\n");
-            sb.append(entry.getValue().getCpt().toString()).append("\n");
-        }
-
-        return sb.toString();
-    }
-
+    // Compute full joint probability
     public Double fullJointProb(Map<String, String> elements) {
         List<Double> probes = new ArrayList<>();
         for (String key : elements.keySet()) {
@@ -129,7 +119,7 @@ public class BNetwork {
     }
 
     public double naiveAlgo(String queryV, String queryVal, Map<String, String> evidences) {
-        Variable queryVar = getVariable(queryV); //המרת המשתנים לאובייקטים variable
+        Variable queryVar = getVariable(queryV); //convert to variable objects
         Map<Variable, String> evidence = new LinkedHashMap<>();
         for (String var : evidences.keySet()) {
             Variable variable = getVariable(var);
@@ -142,10 +132,10 @@ public class BNetwork {
             return result1;
         }
 
-        //יצירת קומבינציות אפשריות של כל משתני הhidden
+        // Generate all combinations of hidden variables
         List<String> hidden = getHidden(queryVar, evidence);
         List<Variable> hiddenVars = new ArrayList<>();
-        for (String var : hidden) { //המרה למשתנים
+        for (String var : hidden) { //convert to variable objects
             Variable variable = getVariable(var);
             hiddenVars.add(variable);
         }
@@ -154,12 +144,12 @@ public class BNetwork {
             comb.putAll(evidences);
         }
 
-        //ההסתברות של המונה
+        //numerator prob
         double result = 0.0;
-        //ההסתברות של המכנה
+        //denominator prob
         double sum = 0.0;
 
-        //מעבר על כל הoutcomes של משתנה הquery ליצירת קומבינציות מתאימות לכל אחת
+        //loop over the query's outcomes to generate all combinations for each one
         List<String> queryOuts = getVariable(queryV).getOutcomes();
         for (String outcome : queryOuts) {
             for (Map<String, String> comb : combinations) {
@@ -176,14 +166,16 @@ public class BNetwork {
             result = result / sum;
         }
 
-        int addsInDenominator = queryOuts.size() - 1;// מספר החיבורים במכנה לנרמול
+        int addsInDenominator = queryOuts.size() - 1;// num of additions in denominator for normalize
         int additions = ((combinations.size() - 1) * queryOuts.size()) + addsInDenominator;
         additionCount += additions;
         return result;
 
     }
 
-    //helpers for VE
+    //////helpers for VE//////
+
+    // Create factor from variable CPT
     public Factor createFactor(Variable var) {
         Cpt varCpt = var.getCpt();
         Map<Map<String, String>, Double> table = varCpt.getTable();
@@ -198,6 +190,7 @@ public class BNetwork {
 
     }
 
+    // Recursively collect ancestors
     public void findAncestors(Variable var, List<Variable> ancestors) {
         for (Variable parent : var.getParents()) {
             if (!ancestors.contains(parent)) {
@@ -207,37 +200,42 @@ public class BNetwork {
         }
     }
 
+    // Variable elimination engine
     public Factor eliminateProcessor(List<String> eliminateOrder, List<Factor> factors) {
         List<Factor> currentFactors = new ArrayList<>(factors);
-        for (String currHidden : eliminateOrder) {//מעבר על הרשימה של משתני hidden ממוינת לפי הstrategy שנבחר
-            List<Factor> toJoin = new ArrayList<>(); //הכנת רשימה של פקטורים המכילים את currHidden שרוצים לבצע עליו אלימינציה
+        // Iterate over the list of hidden variables sorted by the selected strategy
+        for (String currHidden : eliminateOrder) {
+            // Prepare a list of factors that contain the current hidden variable to eliminate
+            List<Factor> toJoin = new ArrayList<>();
             Variable hidden = getVariable(currHidden);
             for (Factor fac : currentFactors) {
                 if (fac.getVariables().contains(hidden)) {
                     toJoin.add(fac);
                 }
             }
-            if (toJoin.isEmpty()) { //אם המשתנה hidden נמחק מכל הפקטורים
+            if (toJoin.isEmpty()) {
+                // If the hidden variable no longer appears in any factor, skip it
                 continue;
             }
 
-            currentFactors.removeAll(toJoin);//מורידים מהרשימה את כל הפקטורים שאנחנו הולכים לאחד
-            Factor joined = joinProcessor(toJoin);//מחזיר את הפקטור הסופי של האיחוד של כל הפקטורים בtoJoin
+            currentFactors.removeAll(toJoin);// Remove all the factors we are about to join
+            Factor joined = joinProcessor(toJoin);//Join all selected factors
 
             int before = joined.getSize();
 
-            Factor newFactor = joined.eliminateVar(currHidden);//ביצוע של eliminate על הפקטור האחרון שמכיל את current hidden
+            Factor newFactor = joined.eliminateVar(currHidden);// Eliminate the hidden variable
 
             int after = newFactor.getSize();
             additionCount += before - after;
 
             if (newFactor.getSize() > 1) {
-                currentFactors.add(newFactor);//הוספת הפקטור החדש לרשימת הפקטורים
+                currentFactors.add(newFactor);// Add the new factor back if it has more than one row
             }
 
         }
         Factor queryFactor = currentFactors.get(0);
-        if (currentFactors.size() > 1) {//אם רשימת הפקטורים גדולה מאחדת סימן שנשאר לאחד את הפקטורים שמכילים את query
+        if (currentFactors.size() > 1) {
+            // If more than one factor remains, join them to obtain the final result
             queryFactor = joinProcessor(currentFactors);
         }
         return queryFactor;
@@ -247,18 +245,18 @@ public class BNetwork {
     public Factor joinProcessor(List<Factor> factorsToJoin) {
         List<Factor> toJoin = new ArrayList<>(factorsToJoin);
         while (toJoin.size() > 1) {
-            Factor f1 = getMin(toJoin);//תבחר את 2 הפקטורים הקטנים
+            Factor f1 = getMin(toJoin);// Select the smallest factor
             toJoin.remove(f1);
-            Factor f2 = getMin(toJoin);
+            Factor f2 = getMin(toJoin); // Select the second smallest
             toJoin.remove(f2);
-            Factor joined = f1.join(f2);//תבצע עליהם איחוד
-            multiplicationCount += joined.getSize();
-            toJoin.add(joined);//תחזיר את האיחוד לרשימה
+            Factor joined = f1.join(f2);// Join both
+            multiplicationCount += joined.getSize(); // Count the size of the result as multiplications
+            toJoin.add(joined);// Add the joined factor back
         }
         Factor newFactor = toJoin.get(0);
         return newFactor;
     }
-
+    // Get the smallest factor
     private Factor getMin(List<Factor> factors) {
         Factor min = factors.get(0);
         for (int i = 1; i < factors.size(); i++) {
@@ -269,9 +267,9 @@ public class BNetwork {
         }
         return min;
     }
-
+    // Main function for Variable Elimination algo.
     public double variableElimination(String queryV, String queryVal, Map<String, String> evidences, EliminationStrategy strategy) {
-        Variable queryVar = getVariable(queryV); //המרת המשתנים לאובייקטים variable
+        Variable queryVar = getVariable(queryV); //convert to Variable Objects
         Map<Variable, String> evidence = new LinkedHashMap<>();
         for (String var : evidences.keySet()) {
             Variable variable = getVariable(var);
@@ -282,11 +280,11 @@ public class BNetwork {
         if(result1 != -1){
             return result1;
         }
-        //הכנת רשימה של כל המשתנים הנמצאים בprobaability query
+        // Prepare list of variables involved in the probability query
         List<Variable> queryVars = new ArrayList<>();
         queryVars.add(queryVar);
         queryVars.addAll(evidence.keySet());
-        //הכנה של רשימת המשתנים שצריכים ליצור עבורם פקטור
+        // Collect all variables that need factor creation
         List<Variable> factorToCreate = new ArrayList<>();
         for (Variable var : queryVars) {
             if (!factorToCreate.contains(var)) {
@@ -295,25 +293,25 @@ public class BNetwork {
             findAncestors(var, factorToCreate);
         }
 
-        // לולאה ראשית ליצירת הפקטורים וצמצום פקטורים עם שורה בודדת
+        // Main loop to create factors and reduce irrelevant rows
         List<Factor> factors = new ArrayList<>();
         for (Variable var : factorToCreate) {
             Factor fac = createFactor(var);
-            //אלימינציה של שורות ועמודות לא רלוונטיות של פקטורים המכיליםoutcome שונה של המשתני evidence
-            for (Variable evi : evidence.keySet()) {//לואלה על המשתני evidence כדי לבדוק אם הפקטור שבתהליך מכיל אחד מהם אם כן נוריד את השורות הלא רלוונטיות
+            // Reduce rows for evidence values in each relevant factor
+            for (Variable evi : evidence.keySet()) {
                 if (fac.getVariables().contains(evi)) {
                     Map<Map<String, String>, Double> reduced = fac.reduceEvidence(evi, evidence.get(evi));
                     fac.setFactor(reduced);
                 }
             }
-            if (fac.getSize() > 1) { //אם לפקטור לא נותר רק שורה אחת אז מוסיפים לרשימת הפקטורים הסופית
+            if (fac.getSize() > 1) { // Only keep factors with more than one row
                 factors.add(fac);
             }
         }
-        //שלב האלימינציה
+        //elimination step
         List<String> toEliminate = getHidden(queryVar, evidence);
         Factor result = new Factor();
-        //קריאה למיון סדר האלמינציה לפי הstrategy שהועבר
+        // Sort elimination order based on strategy
         if (strategy == EliminationStrategy.LEX) {
             Collections.sort(toEliminate);
             result = eliminateProcessor(toEliminate, factors);
@@ -321,7 +319,7 @@ public class BNetwork {
             sortByFactorSize(toEliminate, factors);
             result = eliminateProcessor(toEliminate, factors);
         }
-        //נרמול הפקטור הבודד האחרון שהתקבל
+        // Normalize the resulting factor
         result.normalize();
         int addition = result.getSize() - 1;
         additionCount += addition;
@@ -335,22 +333,22 @@ public class BNetwork {
 
     public void sortByFactorSize(List<String> toEliminate, List<Factor> factors) {
         List<eliminateProduct> productSizesToSort = new ArrayList<>();
-        for (String hid : toEliminate) { //מעבר על כל hiddens
+        for (String hid : toEliminate) { // For each hidden variable
             Variable hidden = getVariable(hid);
-            Set<Variable> productVars = new HashSet<>(); //המשתנים שמשתתפים בפקטורים בהם hidden מופיע
-            for (Factor fac : factors) { //לכל hidden תעבור על כל הפקטורים
+            Set<Variable> productVars = new HashSet<>(); // Variables participating in factors with this hidden var
+            for (Factor fac : factors) {
                 List<Variable> facVars = fac.getVariables();
                 if (facVars.contains(hidden)) {
-                    productVars.addAll(facVars); //תוסיף את המשתנים שמשתתפים בפקטורים בהם hidden מופיע
+                    productVars.addAll(facVars); // Add all variables from related factors
                 }
             }
-            productVars.remove(hidden); //תסיר את hidden לטובת ההכפלה
+            productVars.remove(hidden); // Remove the hidden itself for product calculation
 
-            if (productVars.size() == 0){ //אם hidden לא נמצא בשום פקטור, אז גם לא יהיה רלוונטי בשלב האלמינציה
+            if (productVars.size() == 0){ // Hidden not in any factor -> irrelevant for elimination-> assign 0.
                 eliminateProduct hiddenNoProduct = new eliminateProduct(hidden,0);
                 productSizesToSort.add(hiddenNoProduct);
             }
-            if (productVars.size() > 0) { //אם hiden נמצא בלפחות פקטור אחד
+            if (productVars.size() > 0) { //Hidden participating at least in one factor
                 int productSize = 1;
                 for (Variable var : productVars) {
                     int varOutCount = var.getOutcomesSize();
@@ -363,7 +361,7 @@ public class BNetwork {
         if(productSizesToSort.size() > 1){
         Collections.sort(productSizesToSort);
         }
-
+        // Overwrite original elimination list with sorted one
         toEliminate.clear();
         for(int i = 0; i < productSizesToSort.size(); i++) {
            toEliminate.add(productSizesToSort.get(i).getVar().getName());
@@ -371,13 +369,6 @@ public class BNetwork {
     }
 
 
-    public Map<Variable, String> convertEvidence(Map<String, String> stringEvidence) {
-        Map<Variable, String> result = new LinkedHashMap<>();
-        for (Map.Entry<String, String> entry : stringEvidence.entrySet()) {
-            result.put(getVariable(entry.getKey()), entry.getValue());
-        }
-        return result;
-    }
 
 
 
