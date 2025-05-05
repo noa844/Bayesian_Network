@@ -4,8 +4,9 @@ public class Factor implements Comparable {
     private List<Variable> _variables;
     private Map<Map<String, String>, Double> _factor;
 
-    public Factor(){
+    public Factor() {
     }
+
     public Factor(Collection<Variable> variables) {
         this._variables = new ArrayList<>(variables);
         this._factor = new LinkedHashMap<>();
@@ -38,9 +39,11 @@ public class Factor implements Comparable {
     public double getProb(Map<String, String> assignment) {
         Double prob = _factor.get(assignment);
         if (prob == null) {
-            throw new NullPointerException("prob value doesn't exist for this key");
+            System.out.println("prob value doesn't exist for this key");
+            return 1.0;
+        } else {
+            return prob;
         }
-        return prob;
     }
 
 
@@ -60,7 +63,7 @@ public class Factor implements Comparable {
         } else if (f1Size < f2Size) {
             return -1;
 
-        } else {
+        } else { // In case of tie, compare ASCII sum of variable names
             int f1Ascii = this.getVarsAscii(_variables);
             int f2Ascii = f2.getVarsAscii(f2.getVariables());
             return Integer.compare(f1Ascii, f2Ascii);
@@ -76,7 +79,7 @@ public class Factor implements Comparable {
         }
         return sum;
     }
-
+    // Variable elimination: remove 'var' from this factor by summing over it
     public Factor eliminateVar(String var) {
         List<Variable> newVars = new ArrayList<>();//filter variables
         int i = 0;
@@ -90,9 +93,9 @@ public class Factor implements Comparable {
         List<Map<String, String>> newKeys = Tools.generateCombinations(newVars);
         Factor newFactor = new Factor(newVars);
 
-        for (Map<String, String> newFactorKey : newKeys) {//pour chaque combinaison de la nouvelle table
+        for (Map<String, String> newFactorKey : newKeys) {
             double sum = 0.0;
-            for (Map<String, String> oldFactorKey : _factor.keySet()) { //parcour chaque ligne de l'ancienne table avec les cles correspondente au cles de la nouvelle table
+            for (Map<String, String> oldFactorKey : _factor.keySet()) { //traverse each row of the old table with the keys corresponding to the keys of the new table.
                 if (oldFactorKey.entrySet().containsAll(newFactorKey.entrySet())) {
                     sum += _factor.get(oldFactorKey);
                 }
@@ -103,16 +106,16 @@ public class Factor implements Comparable {
         return newFactor;
 
     }
-
+    // Normalize the factor so that probabilities sum to 1
     public void normalize() {
         double alpha = 0.0;
-        // Calculer la somme totale des probabilités
+        //total probabilities sum
         for (double prob : _factor.values()) {
             alpha += prob;
         }
-        // Éviter la division par zéro
+
         if (alpha != 0.0) {
-            // Normaliser chaque probabilité
+            // Normalize each probability
             for (Map<String, String> key : _factor.keySet()) {
                 _factor.put(key, _factor.get(key) / alpha);
 
@@ -121,52 +124,57 @@ public class Factor implements Comparable {
     }
 
 
-    //pas oublier d'utiliser juste apres setTable
+
     public Map<Map<String, String>, Double> reduceEvidence(Variable evidence, String out) {
 
-        Map<Map<String, String>, Double> newTable = new LinkedHashMap<>();//nouvelle table
+        Map<Map<String, String>, Double> newTable = new LinkedHashMap<>();// new reduced table
 
-        Iterator<Map<String, String>> iterator = _factor.keySet().iterator();//iteration sur la table actuel
+        Iterator<Map<String, String>> iterator = _factor.keySet().iterator();// iterate over the current factor's keys
 
         while (iterator.hasNext()) {
             Map<String, String> key = iterator.next();
-            String varOut = key.get(evidence.getName());//get le outcome de la ligne actuel de la table actuel
+            String varOut = key.get(evidence.getName());// get the outcome value for the evidence variable in the current row
 
-            if (varOut.equals(out)) {//si dan la ligne se trouve evidence avec le outcome rechercher on cree une nouvelle cle avec les meme valeur sans l'evidence
+
+            if (varOut.equals(out)) {// if the current row matches the desired evidence outcome
                 Map<String, String> newKey = new LinkedHashMap<>();
+                // create a new key by removing the evidence variable from the assignment
                 for (String var : key.keySet()) {
                     if (!var.equals(evidence.getName())) {
                         newKey.put(var, key.get(var));
                     }
                 }
-                newTable.put(newKey, _factor.get(key));
+                newTable.put(newKey, _factor.get(key));// copy the probability to the new table
 
             }
         }
 
-        _variables.remove(evidence);
+        _variables.remove(evidence);// remove the evidence variable from the factor's header
         return newTable;
 
 
     }
 
     public Factor join(Factor f2) {
-        //יוצרים את הרשימה של variables שיכיל הפקטור
+        // Create the union of all variables from both factors
         Set<Variable> factorVars = new LinkedHashSet<>();
         factorVars.addAll(this.getVariables());
         factorVars.addAll(f2.getVariables());
 
-        //הפקטור המאוחד
+        // Create the resulting factor
         Factor FactorResult = new Factor(factorVars);
-
+        // Generate all possible assignments over the union of variables
         List<Map<String, String>> combinations = Tools.generateCombinations(factorVars);
 
 
         for (Map<String, String> assignment : combinations) {
+            // Project the assignment onto the current factor's variables
             Map<String, String> keyF1 = filterKey(assignment, this.getVariables());
             double p1 = this.getProb(keyF1);
+            // Project the assignment onto f2's variables
             Map<String, String> keyF2 = filterKey(assignment, f2.getVariables());
             double p2 = f2.getProb(keyF2);
+            // Multiply the probabilities and insert the result
             FactorResult.addRow(assignment, p1 * p2);
 
         }
@@ -175,7 +183,8 @@ public class Factor implements Comparable {
 
     }
 
-    //מפלטר
+    // Helper function: extracts a sub-assignment from a complete assignment,
+    // keeping only the variables relevant to the factor
     public static Map<String, String> filterKey(Map<String, String> combination, List<Variable> variables) {
 
         Map<String, String> result = new LinkedHashMap<>();
@@ -187,13 +196,5 @@ public class Factor implements Comparable {
     }
 
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Factor:\n");
-        for (Map.Entry<Map<String, String>, Double> entry : _factor.entrySet()) {
-            sb.append("  ").append(entry.getKey()).append(" => ").append(entry.getValue()).append("\n");
-        }
-        return sb.toString();
-    }
+
 }

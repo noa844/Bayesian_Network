@@ -60,6 +60,16 @@ public class Cpt {
         }
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("CPT:\n");
+        for (Map.Entry<Map<String, String>, Double> entry : _CPT.entrySet()) {
+            sb.append("  ").append(entry.getKey()).append(" => ").append(entry.getValue()).append("\n");
+        }
+        return sb.toString();
+    }
+
 
 
 }

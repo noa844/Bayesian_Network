@@ -8,8 +8,6 @@ import java.util.Map;
 public class Ex1 {
     public static void main(String[] args) throws Exception {
 
-        long startTime = System.currentTimeMillis();
-
         BufferedReader reader = new BufferedReader(new FileReader("input.txt"));
         BufferedWriter writer = new BufferedWriter(new FileWriter("output.txt"));
 
@@ -91,13 +89,6 @@ public class Ex1 {
         reader.close();
         writer.close();
 
-        long endTime = System.currentTimeMillis();
-        long durationMillis = endTime - startTime;
-
-        double durationSeconds = durationMillis / 1000.0;
-        double durationMinutes = durationSeconds / 60.0;
-
-        System.out.printf("Execution time: %.3f seconds (%.2f minutes)%n", durationSeconds, durationMinutes);
 
     }
 }
