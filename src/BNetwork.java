@@ -17,6 +17,7 @@ public class BNetwork {
         return _variables.get(name);
     }
 
+
     public Map<String, Variable> getVariables() {
         return _variables;
     }

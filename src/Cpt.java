@@ -82,6 +82,7 @@ public class Cpt {
             return;
         }
 
+
         // Recursive step: go through the current parent's outcomes
         // and for each, continue deeper in the recursion.
         Variable parent = parents.get(p);
