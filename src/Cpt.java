@@ -1,17 +1,18 @@
 import java.util.*;
 
 public class Cpt {
-
+    // Conditional Probability Table, each entry is a mapping from assignment (variable -> value) to its probability
     private final Map<Map<String,String>, Double> _CPT = new LinkedHashMap<>();
-
+    // Add a row (assignment -> probability) to the CPT
     public void addRow(Map<String,String> keys, double prob) {
-        _CPT.put((new LinkedHashMap<>(keys)), prob);  //put as key a new map to keep this key immutable.
+        _CPT.put((new LinkedHashMap<>(keys)), prob);
     }
-
+    // Return the entire CPT table
     public Map<Map<String, String>, Double> getTable() {
 
         return _CPT;
     }
+    // Return the probability associated with a given assignment (map version)
     public double getProbFromMap(Map<String,String> assignment){
         Double prob = _CPT.get(assignment);
         if(prob==null){
@@ -19,15 +20,20 @@ public class Cpt {
         }
         return prob;
     }
-    public double getProbFromList(List<String> list) {
+
+    // Return the probability from a list representing alternating variable-value pairs
+    // If the list is incorrect (not found), return 1.0 and print a warning
+    public double getProbFromList(List<String> list) { //if list incorrect , return 1;
         Map<String, String> assignment = Tools.listToAssignmentMap(list);
         Double prob = _CPT.get(assignment);
         if(prob==null){
-            throw new NullPointerException("prob value doesn't exist for this key");
+            System.out.println("prob value doesn't exist for this key");
+            return 1.0;
+        }else {
+            return prob;
         }
-        return prob;
     }
-
+    // Return the number of rows in the CPT
     public int getSize() {
 
         return _CPT.size();
@@ -37,62 +43,23 @@ public class Cpt {
       return   _CPT.isEmpty();
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("CPT:\n");
-        for (Map.Entry<Map<String, String>, Double> entry : _CPT.entrySet()) {
-            sb.append("  ").append(entry.getKey()).append(" => ").append(entry.getValue()).append("\n");
-        }
-        return sb.toString();
-    }
 
-
-    // Function to load the CPT table for a given variable.
-    // Returns true if successful (all probabilities used), false otherwise.
-    public boolean loadCpt(Variable v){
-        List<Variable> parents = v.getParents();
+    // Load the CPT for a given variable v
+    // This method constructs all combinations of outcomes for v and its parents,
+    // and fills the CPT using the probabilities associated with these combinations.
+    public void loadCpt(Variable v){
+        List<Variable> cptVars = new ArrayList<>(); //list of variables for generating combinations.
+        List<Variable> vParents = v.getParents();
+        cptVars.addAll(vParents);
+        cptVars.add(v); // Variable itself added at the end
+        List<Map<String,String>> keysList = Tools.generateCombinations(cptVars);//tool to generate combinations
         List<Double> probes = v.getProb();
         Iterator<Double> iterator = probes.iterator();
-        Map<String,String> key = new LinkedHashMap<>();
-
-        fillTable(0,parents,iterator,key,v);
-
-        return !iterator.hasNext();
+        for(Map<String,String> key : keysList){
+            addRow(key,iterator.next());// Insert each combination with its corresponding probability
+        }
     }
 
-
-    // Recursive function to generate all CPT combinations corresponding to each probability.
-    // The recursion iterates over the outcomes of the variable's parents.
-    // For each parent (starting from the first in the list), we loop over all its outcomes,
-    // and for each such outcome we continue the recursion deeper.
-    // Once all parent combinations are handled (i.e., base case reached),
-    // we then iterate over the outcomes of the variable itself (which changes the fastest),
-    // and insert a row into the CPT for each outcome.
-    private void fillTable(int p, List<Variable> parents, Iterator<Double> iterator, Map<String,String> temp, Variable v ) {
-
-        if (p == parents.size()) {
-            // Base case: all parent combinations handled.
-            // Now handle all outcomes for the variable itself.
-            for (String out : v.getOutcomes()) {
-                temp.put(v.getName(), out);
-                addRow(temp, iterator.next());        // Add a row to the CPT table.
-            }
-            temp.remove(v.getName()); // Clean up after iteration to avoid incorrect states.
-            return;
-        }
-
-
-        // Recursive step: go through the current parent's outcomes
-        // and for each, continue deeper in the recursion.
-        Variable parent = parents.get(p);
-
-        for (String out : parent.getOutcomes()) {
-            temp.put(parent.getName(), out);
-            fillTable(p + 1, parents, iterator, temp, v);
-        }
-        temp.remove(parent.getName());  // Clean up after backtracking
-    }
 
 
 }
