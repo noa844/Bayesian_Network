@@ -1,3 +1,5 @@
+//noa.honigstein@gmail.com
+
 // Enumeration to define different variable elimination strategies
 public enum EliminationStrategy {
 

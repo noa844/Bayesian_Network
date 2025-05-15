@@ -1,3 +1,5 @@
+//noa.honigstein@gmail.com
+
 // A helper class used to associate a variable with its corresponding product size
 // (i.e., the size of the factor that would be created if we eliminate this variable).
 public class eliminateProduct implements Comparable<eliminateProduct> {
